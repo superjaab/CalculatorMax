@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <title>CalculatorMax</title>
+  <title>เฉลี่ยกำไรจากเสมอไปชนะ 1/2</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -13,34 +13,29 @@
       background-color: #f4f6f9;
       color: #222;
     }
-
     h2 {
       text-align: center;
       color: #0066cc;
       font-size: 28px;
       margin-bottom: 15px;
     }
-
     table {
       border-collapse: collapse;
       width: 100%;
       margin-bottom: 20px;
       background-color: #fff;
     }
-
     th, td {
       border: 1px solid #ccc;
       padding: 14px;
       text-align: center;
       font-size: 18px;
     }
-
     th {
       background-color: #e6f0ff;
       color: #003366;
       font-weight: bold;
     }
-
     .num-input {
       width: 120px;
       font-size: 20px;
@@ -49,7 +44,6 @@
       border: 1px solid #ccc;
       border-radius: 6px;
     }
-
     .button-container {
       display: flex;
       flex-wrap: wrap;
@@ -57,7 +51,6 @@
       justify-content: center;
       margin-bottom: 25px;
     }
-
     button {
       padding: 14px 22px;
       font-size: 18px;
@@ -69,22 +62,18 @@
       transition: 0.3s;
       min-width: 200px;
     }
-
     button:hover {
       background-color: #005bb5;
     }
-
     .summary {
       font-size: 20px;
       font-weight: bold;
       margin: 10px 0;
       text-align: center;
     }
-
     .summary span {
       color: #003366;
     }
-
     @media (max-width: 600px) {
       .num-input {
         width: 100%;
@@ -172,7 +161,6 @@
       return value.replace(/,/g, "");
     }
 
-    // format input
     moneyInputs.forEach(input => {
       input.addEventListener("input", () => {
         let raw = unformatComma(input.value);
@@ -191,8 +179,8 @@
 
     function getDrawOdds() {
       let main = parseInt(drawOddsMain.value) || 0;
-      let decimal = parseInt(drawOddsDecimal.value) || 0;
-      return parseFloat(`${main}.${decimal.toString().padStart(2, '0')}`);
+      let decimal = drawOddsDecimal.value.padStart(2, '0').slice(0, 2);
+      return parseFloat(`${main}.${decimal}`);
     }
 
     function calculate() {
@@ -275,21 +263,11 @@
 
       [drawAmt, win1Amt, win2Amt].forEach(input => input.value = "");
       [win1Odds, win2Odds, drawOddsMain, drawOddsDecimal].forEach(input => input.value = "");
-
       totalInvestment.textContent = "0";
       totalWin12.textContent = "0";
       resultTable.innerHTML = "<tr><td colspan='3'>-</td></tr>";
     }
 
-    // ล็อกค่าน้ำเสมอ
-    drawOddsMain.addEventListener("input", () => {
-      drawOddsMain.value = drawOddsMain.value.slice(0, 1);
-    });
-    drawOddsDecimal.addEventListener("input", () => {
-      drawOddsDecimal.value = drawOddsDecimal.value.slice(0, 2);
-    });
-
-    // จำกัดทศนิยมไม่เกิน 2
     function limitDecimalPlaces(input) {
       input.addEventListener("input", () => {
         let val = input.value;
@@ -301,11 +279,42 @@
         }
       });
     }
-
     limitDecimalPlaces(win1Odds);
     limitDecimalPlaces(win2Odds);
 
-    // คำนวณอัตโนมัติ
+    const navOrder = [drawOddsMain, drawOddsDecimal, win1Odds, win2Odds];
+    navOrder.forEach((input, index) => {
+      input.addEventListener("keydown", e => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (index + 1 < navOrder.length) {
+            navOrder[index + 1].focus();
+          }
+        }
+      });
+    });
+
+    drawOddsMain.addEventListener("input", () => {
+      drawOddsMain.value = drawOddsMain.value.slice(0, 1);
+      if (drawOddsMain.value.length === 1) {
+        drawOddsDecimal.focus();
+      }
+    });
+
+    drawOddsDecimal.addEventListener("input", () => {
+      drawOddsDecimal.value = drawOddsDecimal.value.slice(0, 2);
+      if (drawOddsDecimal.value.length === 2) {
+        win1Odds.focus();
+      }
+    });
+
+    win1Odds.addEventListener("input", () => {
+      const val = win1Odds.value;
+      if (val.match(/^\d+\.\d{2}$/) || val.length >= 4) {
+        win2Odds.focus();
+      }
+    });
+
     [drawAmt, win1Amt, win2Amt].forEach(input => {
       input.addEventListener("input", calculate);
     });
