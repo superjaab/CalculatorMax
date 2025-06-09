@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>เฉลี่ยกำไรจากเสมอไปชนะ 1/2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+      background-color: #f4f6f9;
+      color: #222;
+    }
+
+    h2 {
+      text-align: center;
+      color: #0066cc;
+      font-size: 28px;
+      margin-bottom: 15px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 20px;
+      background-color: #fff;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 14px;
+      text-align: center;
+      font-size: 18px;
+    }
+
+    th {
+      background-color: #e6f0ff;
+      color: #003366;
+      font-weight: bold;
+    }
+
+    .num-input {
+      width: 120px;
+      font-size: 20px;
+      padding: 10px;
+      text-align: right;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .button-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 25px;
+    }
+
+    button {
+      padding: 14px 22px;
+      font-size: 18px;
+      border-radius: 6px;
+      border: none;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+      min-width: 200px;
+    }
+
+    button:hover {
+      background-color: #005bb5;
+    }
+
+    .summary {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 10px 0;
+      text-align: center;
+    }
+
+    .summary span {
+      color: #003366;
+    }
+
+    @media (max-width: 600px) {
+      .num-input {
+        width: 100%;
+      }
+      button {
+        font-size: 16px;
+        padding: 12px;
+        min-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h2>ตารางการลงทุน By Super</h2>
+
+  <table>
+    <thead>
+      <tr><th>เว็บ</th><th>เงินทุน</th><th>ค่าน้ำ</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>เสมอ / ต่อ</td>
+        <td><input type="number" id="draw_amt" class="num-input" min="0" /></td>
+        <td>
+          <input type="number" id="draw_odds_main" class="num-input" min="0" style="width: 70px;" /> .
+          <input type="number" id="draw_odds_decimal" class="num-input" min="0" max="99" style="width: 70px;" />
+        </td>
+      </tr>
+      <tr>
+        <td>ชนะ 1</td>
+        <td><input type="number" id="win1_amt" class="num-input" min="0" /></td>
+        <td><input type="number" id="win1_odds" class="num-input" min="0" step="0.01" /></td>
+      </tr>
+      <tr>
+        <td>ชนะ 2</td>
+        <td><input type="number" id="win2_amt" class="num-input" min="0" /></td>
+        <td><input type="number" id="win2_odds" class="num-input" min="0" step="0.01" /></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="button-container">
+    <button onclick="resetWinBets()">เฉลี่ยกำไรให้เท่ากัน</button>
+    <button onclick="maximizeWinProfit()">คำนวณกำไรสูงสุด</button>
+    <button onclick="clearAll()">ล้างทั้งหมด</button>
+  </div>
+
+  <div class="summary">รวมเงินทุนทั้งหมด: <span id="total_investment">0</span> บาท</div>
+  <div class="summary">รวมทุนฝั่งชนะ 1/2: <span id="total_win12">0</span> บาท</div>
+
+  <h2>ผลการคำนวณ</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>กรณี</th>
+        <th>ยอดรวม</th>
+        <th>กำไร</th>
+      </tr>
+    </thead>
+    <tbody id="result-table">
+      <tr><td colspan="3">-</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    const drawAmt = document.getElementById("draw_amt");
+    const drawOddsMain = document.getElementById("draw_odds_main");
+    const drawOddsDecimal = document.getElementById("draw_odds_decimal");
+    const win1Amt = document.getElementById("win1_amt");
+    const win2Amt = document.getElementById("win2_amt");
+    const win1Odds = document.getElementById("win1_odds");
+    const win2Odds = document.getElementById("win2_odds");
+    const totalInvestment = document.getElementById("total_investment");
+    const totalWin12 = document.getElementById("total_win12");
+    const resultTable = document.getElementById("result-table");
+
+    function format(num) {
+      return Math.round(num).toLocaleString();
+    }
+
+    function getDrawOdds() {
+      let main = parseInt(drawOddsMain.value) || 0;
+      let decimal = parseInt(drawOddsDecimal.value) || 0;
+      return parseFloat(`${main}.${decimal.toString().padStart(2, '0')}`);
+    }
+
+    function calculate() {
+      let d = parseFloat(drawAmt.value) || 0;
+      let o = getDrawOdds();
+      let a = parseFloat(win1Odds.value) || 0;
+      let b = parseFloat(win2Odds.value) || 0;
+      let x = parseFloat(win1Amt.value);
+      let y = parseFloat(win2Amt.value);
+
+      if (d === 0 || o === 0 || a === 0 || b === 0) {
+        resultTable.innerHTML = "<tr><td colspan='3'>กรุณากรอกข้อมูลให้ครบ</td></tr>";
+        totalInvestment.textContent = "0";
+        totalWin12.textContent = "0";
+        return;
+      }
+
+      let total = d + x + y;
+      let winTotal = x + y;
+
+      totalInvestment.textContent = format(total);
+      totalWin12.textContent = format(winTotal);
+
+      const results = [
+        { name: "ออกชนะ 1", sum: x * a },
+        { name: "ออกชนะ 2", sum: y * b },
+        { name: "ออกเสมอ / ต่อ", sum: d * o }
+      ];
+
+      resultTable.innerHTML = "";
+      results.forEach(r => {
+        const profit = r.sum - total;
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${r.name}</td>
+          <td>${format(r.sum)}</td>
+          <td>${format(profit)}</td>
+        `;
+        resultTable.appendChild(row);
+      });
+    }
+
+    function resetWinBets() {
+      let d = parseFloat(drawAmt.value) || 0;
+      let o = getDrawOdds();
+      let a = parseFloat(win1Odds.value) || 0;
+      let b = parseFloat(win2Odds.value) || 0;
+      if (d === 0 || o === 0 || a === 0 || b === 0) return;
+
+      let target = d * o;
+      let x = target / a;
+      let y = target / b;
+
+      win1Amt.value = Math.round(x);
+      win2Amt.value = Math.round(y);
+
+      calculate();
+    }
+
+    function maximizeWinProfit() {
+      let d = parseFloat(drawAmt.value) || 0;
+      let o = getDrawOdds();
+      let a = parseFloat(win1Odds.value) || 0;
+      let b = parseFloat(win2Odds.value) || 0;
+      if (d === 0 || o === 0 || a === 0 || b === 0) return;
+
+      let profit_from_draw = d * (o - 1);
+      let k = profit_from_draw / (1 / a + 1 / b);
+      let x = k / a;
+      let y = k / b;
+
+      win1Amt.value = Math.round(x);
+      win2Amt.value = Math.round(y);
+
+      calculate();
+    }
+
+    function clearAll() {
+      if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลทั้งหมด?")) return;
+
+      drawAmt.value = "";
+      drawOddsMain.value = "";
+      drawOddsDecimal.value = "";
+      win1Amt.value = "";
+      win1Odds.value = "";
+      win2Amt.value = "";
+      win2Odds.value = "";
+      totalInvestment.textContent = "0";
+      totalWin12.textContent = "0";
+      resultTable.innerHTML = "<tr><td colspan='3'>-</td></tr>";
+    }
+
+    // จำกัดจำนวนตัวเลขในช่องค่าน้ำเสมอ
+    drawOddsMain.addEventListener("input", () => {
+      drawOddsMain.value = drawOddsMain.value.slice(0, 1);
+    });
+    drawOddsDecimal.addEventListener("input", () => {
+      drawOddsDecimal.value = drawOddsDecimal.value.slice(0, 2);
+    });
+
+    function limitDecimalPlaces(input) {
+      input.addEventListener("input", () => {
+        let val = input.value;
+        if (val.includes(".")) {
+          let [intPart, decPart] = val.split(".");
+          if (decPart.length > 2) {
+            input.value = intPart + "." + decPart.slice(0, 2);
+          }
+        }
+      });
+    }
+
+    limitDecimalPlaces(win1Odds);
+    limitDecimalPlaces(win2Odds);
+
+    [drawAmt, win1Amt, win2Amt].forEach(input => {
+      input.addEventListener("input", calculate);
+    });
+
+    [drawOddsMain, drawOddsDecimal, win1Odds, win2Odds].forEach(input => {
+      input.addEventListener("input", resetWinBets);
+    });
+
+    calculate();
+  </script>
+
+</body>
+</html>
