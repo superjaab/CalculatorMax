@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <title>เฉลี่ยกำไรจากเสมอไปชนะ 1/2</title>
+  <title>CalculatorMax</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
@@ -120,6 +120,7 @@
     <button onclick="resetWinBets()">เฉลี่ยกำไรให้เท่ากัน</button>
     <button onclick="maximizeWinProfit()">คำนวณกำไรสูงสุด</button>
     <button onclick="clearAll()">ล้างทั้งหมด</button>
+    <button onclick="clearOdds()">ล้างค่าน้ำ</button>
   </div>
 
   <div class="summary">รวมเงินทุนทั้งหมด: <span id="total_investment">0</span> บาท</div>
@@ -179,7 +180,10 @@
 
     function getDrawOdds() {
       let main = parseInt(drawOddsMain.value) || 0;
-      let decimal = drawOddsDecimal.value.padStart(2, '0').slice(0, 2);
+      let decimal = drawOddsDecimal.value.trim();
+      if (decimal.length === 1) decimal = decimal + "0";
+      if (decimal.length === 0) decimal = "00";
+      decimal = decimal.slice(0, 2);
       return parseFloat(`${main}.${decimal}`);
     }
 
@@ -262,10 +266,17 @@
       if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลทั้งหมด?")) return;
 
       [drawAmt, win1Amt, win2Amt].forEach(input => input.value = "");
-      [win1Odds, win2Odds, drawOddsMain, drawOddsDecimal].forEach(input => input.value = "");
+      clearOdds();
       totalInvestment.textContent = "0";
       totalWin12.textContent = "0";
       resultTable.innerHTML = "<tr><td colspan='3'>-</td></tr>";
+    }
+
+    function clearOdds() {
+      drawOddsMain.value = "";
+      drawOddsDecimal.value = "";
+      win1Odds.value = "";
+      win2Odds.value = "";
     }
 
     function limitDecimalPlaces(input) {
@@ -296,16 +307,12 @@
 
     drawOddsMain.addEventListener("input", () => {
       drawOddsMain.value = drawOddsMain.value.slice(0, 1);
-      if (drawOddsMain.value.length === 1) {
-        drawOddsDecimal.focus();
-      }
+      if (drawOddsMain.value.length === 1) drawOddsDecimal.focus();
     });
 
     drawOddsDecimal.addEventListener("input", () => {
       drawOddsDecimal.value = drawOddsDecimal.value.slice(0, 2);
-      if (drawOddsDecimal.value.length === 2) {
-        win1Odds.focus();
-      }
+      if (drawOddsDecimal.value.length === 2) win1Odds.focus();
     });
 
     win1Odds.addEventListener("input", () => {
