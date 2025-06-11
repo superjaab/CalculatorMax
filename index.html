@@ -88,21 +88,79 @@
       padding: 6px 10px;
       font-size: 14px;
     }
-    @media (max-width: 600px) {
-      .num-input {
-        width: 100%;
-      }
-      button {
-        font-size: 16px;
-        padding: 12px;
-        min-width: 100%;
-      }
+    .danger-btn {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .danger-btn:hover {
+      background-color: #c82333;
+    }
+    .saved-results-box {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+      max-height: 350px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+    }
+    .saved-entry {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      position: relative;
+      background: #f9fbfd;
+      transition: box-shadow 0.2s;
+    }
+    .saved-entry:hover {
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .saved-entry .timestamp {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    .saved-entry table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 16px;
+    }
+    .saved-entry th,
+    .saved-entry td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    .saved-entry .delete-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .saved-entry .delete-btn:hover {
+      background-color: #c82333;
+    }
+    .no-data {
+      text-align: center;
+      color: #999;
+      font-style: italic;
     }
   </style>
 </head>
 <body>
-
-  <h2>ตารางการลงทุน By Super</h2>
+  <h2>CalculatorMax By Super</h2>
 
   <table>
     <thead>
@@ -116,7 +174,7 @@
           <div class="odds-group">
             <input type="number" id="draw_odds_main" class="num-input" min="0" style="width: 70px;" /> .
             <input type="number" id="draw_odds_decimal" class="num-input" min="0" max="99" style="width: 70px;" />
-            <button onclick="draw_odds_main.value=''; draw_odds_decimal.value=''">ล้าง</button>
+            <button class="danger-btn" onclick="draw_odds_main.value=''; draw_odds_decimal.value=''">ล้าง</button>
           </div>
         </td>
       </tr>
@@ -126,7 +184,7 @@
         <td>
           <div class="odds-group">
             <input type="number" id="win1_odds" class="num-input" min="0" step="0.01" />
-            <button onclick="win1_odds.value=''">ล้าง</button>
+            <button class="danger-btn" onclick="win1_odds.value=''">ล้าง</button>
           </div>
         </td>
       </tr>
@@ -136,7 +194,7 @@
         <td>
           <div class="odds-group">
             <input type="number" id="win2_odds" class="num-input" min="0" step="0.01" />
-            <button onclick="win2_odds.value=''">ล้าง</button>
+            <button class="danger-btn" onclick="win2_odds.value=''">ล้าง</button>
           </div>
         </td>
       </tr>
@@ -146,8 +204,8 @@
   <div class="button-container">
     <button onclick="resetWinBets()">เฉลี่ยกำไรให้เท่ากัน</button>
     <button onclick="maximizeWinProfit()">คำนวณกำไรสูงสุด</button>
-    <button onclick="clearAll()">ล้างทั้งหมด</button>
-    <button onclick="clearOdds()">ล้างค่าน้ำ</button>
+    <button onclick="clearAll()">🧹 ล้างทั้งหมด</button>
+    <button onclick="saveResult()">💾 บันทึกผล</button>
   </div>
 
   <div class="summary">รวมเงินทุนทั้งหมด: <span id="total_investment">0</span> บาท</div>
@@ -156,209 +214,228 @@
   <h2>ผลการคำนวณ</h2>
   <table>
     <thead>
-      <tr>
-        <th>กรณี</th>
-        <th>ยอดรวม</th>
-        <th>กำไร</th>
-      </tr>
+      <tr><th>กรณี</th><th>ยอดรวม</th><th>กำไร</th></tr>
     </thead>
-    <tbody id="result-table">
-      <tr><td colspan="3">-</td></tr>
-    </tbody>
+    <tbody id="result-table"><tr><td colspan="3">-</td></tr></tbody>
   </table>
 
-  <script>
-    const drawAmt = document.getElementById("draw_amt");
-    const drawOddsMain = document.getElementById("draw_odds_main");
-    const drawOddsDecimal = document.getElementById("draw_odds_decimal");
-    const win1Amt = document.getElementById("win1_amt");
-    const win2Amt = document.getElementById("win2_amt");
-    const win1Odds = document.getElementById("win1_odds");
-    const win2Odds = document.getElementById("win2_odds");
-    const totalInvestment = document.getElementById("total_investment");
-    const totalWin12 = document.getElementById("total_win12");
-    const resultTable = document.getElementById("result-table");
+  <div class="summary">📘 รายการที่บันทึกไว้:</div>
+  <div id="saved-results" class="saved-results-box">
+    <p class="no-data">ไม่มีข้อมูล</p>
+  </div>
 
-    const moneyInputs = document.querySelectorAll(".money-input");
+  <div class="button-container" style="margin-top: 20px;">
+    <button onclick="clearSavedResults()">🗑️ ลบบันทึกทั้งหมด</button>
+  </div>
+<script>
+  const drawAmt = document.getElementById("draw_amt");
+  const drawOddsMain = document.getElementById("draw_odds_main");
+  const drawOddsDecimal = document.getElementById("draw_odds_decimal");
+  const win1Amt = document.getElementById("win1_amt");
+  const win2Amt = document.getElementById("win2_amt");
+  const win1Odds = document.getElementById("win1_odds");
+  const win2Odds = document.getElementById("win2_odds");
+  const totalInvestment = document.getElementById("total_investment");
+  const totalWin12 = document.getElementById("total_win12");
+  const resultTable = document.getElementById("result-table");
 
-    function formatNumberWithComma(num) {
-      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
+  function formatNumberWithComma(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
 
-    function unformatComma(value) {
-      return value.replace(/,/g, "");
-    }
+  function unformatComma(value) {
+    return value.replace(/,/g, "");
+  }
 
-    moneyInputs.forEach(input => {
-      input.addEventListener("input", () => {
-        let raw = unformatComma(input.value);
-        if (!/^\d*$/.test(raw)) return;
-        input.value = formatNumberWithComma(raw);
-      });
+  document.querySelectorAll(".money-input").forEach(input => {
+    input.addEventListener("input", () => {
+      let raw = unformatComma(input.value);
+      if (!/^\d*$/.test(raw)) return;
+      input.value = formatNumberWithComma(raw);
     });
+  });
 
-    function parseAmount(input) {
-      return parseFloat(unformatComma(input.value)) || 0;
-    }
+  function parseAmount(input) {
+    return parseFloat(unformatComma(input.value)) || 0;
+  }
 
-    function format(num) {
-      return Math.round(num).toLocaleString();
-    }
+  function format(num) {
+    return Math.round(num).toLocaleString();
+  }
 
-    function getDrawOdds() {
-      let main = parseInt(drawOddsMain.value) || 0;
-      let decimal = drawOddsDecimal.value.trim();
-      if (decimal.length === 1) decimal = decimal + "0";
-      if (decimal.length === 0) decimal = "00";
-      decimal = decimal.slice(0, 2);
-      return parseFloat(`${main}.${decimal}`);
-    }
+  function getDrawOdds() {
+    let main = parseInt(drawOddsMain.value) || 0;
+    let decimal = drawOddsDecimal.value.trim();
+    if (decimal.length === 1) decimal += "0";
+    if (decimal.length === 0) decimal = "00";
+    return parseFloat(`${main}.${decimal.slice(0, 2)}`);
+  }
 
-    function calculate() {
-      let d = parseAmount(drawAmt);
-      let o = getDrawOdds();
-      let a = parseFloat(win1Odds.value) || 0;
-      let b = parseFloat(win2Odds.value) || 0;
-      let x = parseAmount(win1Amt);
-      let y = parseAmount(win2Amt);
-
-      if (d === 0 || o === 0 || a === 0 || b === 0) {
-        resultTable.innerHTML = "<tr><td colspan='3'>กรุณากรอกข้อมูลให้ครบ</td></tr>";
-        totalInvestment.textContent = "0";
-        totalWin12.textContent = "0";
-        return;
-      }
-
-      let total = d + x + y;
-      let winTotal = x + y;
-
-      totalInvestment.textContent = format(total);
-      totalWin12.textContent = format(winTotal);
-
-      const results = [
-        { name: "ออกชนะ 1", sum: x * a },
-        { name: "ออกชนะ 2", sum: y * b },
-        { name: "ออกเสมอ / ต่อ", sum: d * o }
-      ];
-
-      resultTable.innerHTML = "";
-      results.forEach(r => {
-        const profit = r.sum - total;
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${r.name}</td>
-          <td>${format(r.sum)}</td>
-          <td>${format(profit)}</td>
-        `;
-        resultTable.appendChild(row);
-      });
-    }
-
-    function resetWinBets() {
-      let d = parseAmount(drawAmt);
-      let o = getDrawOdds();
-      let a = parseFloat(win1Odds.value) || 0;
-      let b = parseFloat(win2Odds.value) || 0;
-      if (d === 0 || o === 0 || a === 0 || b === 0) return;
-
-      let target = d * o;
-      let x = target / a;
-      let y = target / b;
-
-      win1Amt.value = formatNumberWithComma(Math.round(x));
-      win2Amt.value = formatNumberWithComma(Math.round(y));
-
-      calculate();
-    }
-
-    function maximizeWinProfit() {
-      let d = parseAmount(drawAmt);
-      let o = getDrawOdds();
-      let a = parseFloat(win1Odds.value) || 0;
-      let b = parseFloat(win2Odds.value) || 0;
-      if (d === 0 || o === 0 || a === 0 || b === 0) return;
-
-      let profit_from_draw = d * (o - 1);
-      let k = profit_from_draw / (1 / a + 1 / b);
-      let x = k / a;
-      let y = k / b;
-
-      win1Amt.value = formatNumberWithComma(Math.round(x));
-      win2Amt.value = formatNumberWithComma(Math.round(y));
-
-      calculate();
-    }
-
-    function clearAll() {
-      if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลทั้งหมด?")) return;
-
-      [drawAmt, win1Amt, win2Amt].forEach(input => input.value = "");
-      clearOdds();
+  function calculate() {
+    let d = parseAmount(drawAmt);
+    let o = getDrawOdds();
+    let a = parseFloat(win1Odds.value) || 0;
+    let b = parseFloat(win2Odds.value) || 0;
+    let x = parseAmount(win1Amt);
+    let y = parseAmount(win2Amt);
+    if (d === 0 || o === 0 || a === 0 || b === 0) {
+      resultTable.innerHTML = "<tr><td colspan='3'>กรุณากรอกข้อมูลให้ครบ</td></tr>";
       totalInvestment.textContent = "0";
       totalWin12.textContent = "0";
-      resultTable.innerHTML = "<tr><td colspan='3'>-</td></tr>";
+      return;
     }
+    let total = d + x + y;
+    totalInvestment.textContent = format(total);
+    totalWin12.textContent = format(x + y);
+    const results = [
+      { name: "ออกชนะ 1", sum: x * a },
+      { name: "ออกชนะ 2", sum: y * b },
+      { name: "ออกเสมอ / ต่อ", sum: d * o }
+    ];
+    resultTable.innerHTML = "";
+    results.forEach(r => {
+      const profit = r.sum - total;
+      resultTable.innerHTML += `<tr><td>${r.name}</td><td>${format(r.sum)}</td><td>${format(profit)}</td></tr>`;
+    });
+  }
 
-    function clearOdds() {
-      drawOddsMain.value = "";
-      drawOddsDecimal.value = "";
-      win1Odds.value = "";
-      win2Odds.value = "";
-    }
+  function resetWinBets() {
+    let d = parseAmount(drawAmt);
+    let o = getDrawOdds();
+    let a = parseFloat(win1Odds.value) || 0;
+    let b = parseFloat(win2Odds.value) || 0;
+    if (d === 0 || o === 0 || a === 0 || b === 0) return;
+    let target = d * o;
+    win1Amt.value = formatNumberWithComma(Math.round(target / a));
+    win2Amt.value = formatNumberWithComma(Math.round(target / b));
+    calculate();
+  }
 
-    function limitDecimalPlaces(input) {
-      input.addEventListener("input", () => {
-        let val = input.value;
-        if (val.includes(".")) {
-          let [intPart, decPart] = val.split(".");
-          if (decPart.length > 2) {
-            input.value = intPart + "." + decPart.slice(0, 2);
-          }
+  function maximizeWinProfit() {
+    let d = parseAmount(drawAmt);
+    let o = getDrawOdds();
+    let a = parseFloat(win1Odds.value) || 0;
+    let b = parseFloat(win2Odds.value) || 0;
+    if (d === 0 || o === 0 || a === 0 || b === 0) return;
+    let profit = d * (o - 1);
+    let k = profit / (1 / a + 1 / b);
+    win1Amt.value = formatNumberWithComma(Math.round(k / a));
+    win2Amt.value = formatNumberWithComma(Math.round(k / b));
+    calculate();
+  }
+
+  function clearAll() {
+    if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างทั้งหมด?")) return;
+    [drawAmt, win1Amt, win2Amt, drawOddsMain, drawOddsDecimal, win1Odds, win2Odds].forEach(el => el.value = "");
+    totalInvestment.textContent = "0";
+    totalWin12.textContent = "0";
+    resultTable.innerHTML = "<tr><td colspan='3'>-</td></tr>";
+  }
+
+  function limitDecimal(input) {
+    input.addEventListener("input", () => {
+      let val = input.value;
+      if (val.includes(".")) {
+        const [intPart, decPart] = val.split(".");
+        if (decPart.length > 2) {
+          input.value = intPart + "." + decPart.slice(0, 2);
         }
-      });
-    }
-    limitDecimalPlaces(win1Odds);
-    limitDecimalPlaces(win2Odds);
-
-    win1Odds.addEventListener("input", () => {
-      const val = win1Odds.value;
-      if (/^\d+\.\d{2}$/.test(val)) {
-        win2Odds.focus();
       }
     });
+  }
 
-    const navOrder = [drawOddsMain, drawOddsDecimal, win1Odds, win2Odds];
-    navOrder.forEach((input, index) => {
-      input.addEventListener("keydown", e => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          if (index + 1 < navOrder.length) {
-            navOrder[index + 1].focus();
-          }
-        }
-      });
+  function saveResult() {
+    const rows = Array.from(resultTable.querySelectorAll("tr"));
+    if (!rows.length || rows[0].textContent.includes("กรุณากรอก")) return alert("กรุณากรอกข้อมูลให้ครบก่อนบันทึก");
+    const now = new Date();
+    const entry = {
+      timestamp: now.toLocaleString("th-TH"),
+      investment: totalInvestment.textContent,
+      win12: totalWin12.textContent,
+      draw_amt: drawAmt.value,
+      win1_amt: win1Amt.value,
+      win2_amt: win2Amt.value,
+      data: rows.map(r => Array.from(r.querySelectorAll("td")).map(td => td.innerText))
+    };
+    const saved = JSON.parse(localStorage.getItem("savedResults") || "[]");
+    saved.unshift(entry);
+    localStorage.setItem("savedResults", JSON.stringify(saved));
+    renderSavedResults();
+  }
+
+  function renderSavedResults() {
+    const container = document.getElementById("saved-results");
+    const saved = JSON.parse(localStorage.getItem("savedResults") || "[]");
+    if (!saved.length) return container.innerHTML = '<p class="no-data">ไม่มีข้อมูล</p>';
+    container.innerHTML = "";
+    saved.forEach((entry, index) => {
+      let html = `<div class="saved-entry"><div class="timestamp">📅 ${entry.timestamp}</div>`;
+      html += `<div style="margin: 8px 0;">💰 รวมทุน: <strong>${entry.investment}</strong> | ชนะ 1/2: <strong>${entry.win12}</strong></div>`;
+      html += `<div style="margin-bottom: 10px;">💸 ทุนแยก: เสมอ <strong>${entry.draw_amt}</strong> | ชนะ1 <strong>${entry.win1_amt}</strong> | ชนะ2 <strong>${entry.win2_amt}</strong></div>`;
+      html += `<table><tr><th>กรณี</th><th>ยอดรวม</th><th>กำไร</th></tr>`;
+      entry.data.forEach(row => html += `<tr>${row.map(c => `<td>${c}</td>`).join("")}</tr>`);
+      html += `</table><button class="delete-btn" onclick="deleteSingleResult(${index})">❌ ลบ</button></div>`;
+      container.insertAdjacentHTML("beforeend", html);
     });
+  }
 
-    drawOddsMain.addEventListener("input", () => {
-      drawOddsMain.value = drawOddsMain.value.slice(0, 1);
-      if (drawOddsMain.value.length === 1) drawOddsDecimal.focus();
+  function deleteSingleResult(index) {
+    const saved = JSON.parse(localStorage.getItem("savedResults") || "[]");
+    saved.splice(index, 1);
+    localStorage.setItem("savedResults", JSON.stringify(saved));
+    renderSavedResults();
+  }
+
+  function clearSavedResults() {
+    if (confirm("ลบบันทึกทั้งหมด?")) {
+      localStorage.removeItem("savedResults");
+      renderSavedResults();
+    }
+  }
+
+  const navOrder = [drawOddsMain, drawOddsDecimal, win1Odds, win2Odds];
+  navOrder.forEach((input, i) => {
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (i + 1 < navOrder.length) navOrder[i + 1].focus();
+      }
     });
+  });
 
-    drawOddsDecimal.addEventListener("input", () => {
-      drawOddsDecimal.value = drawOddsDecimal.value.slice(0, 2);
-      if (drawOddsDecimal.value.length === 2) win1Odds.focus();
-    });
+  win1Odds.addEventListener("input", () => {
+    const val = win1Odds.value;
+    if (/^\d+\.\d{2}$/.test(val)) {
+      win2Odds.focus();
+    }
+  });
 
-    [drawAmt, win1Amt, win2Amt].forEach(input => {
-      input.addEventListener("input", calculate);
-    });
+  drawAmt.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      drawOddsMain.focus();
+    }
+  });
 
-    [drawOddsMain, drawOddsDecimal, win1Odds, win2Odds].forEach(input => {
-      input.addEventListener("input", resetWinBets);
-    });
+  drawOddsMain.addEventListener("input", () => {
+    drawOddsMain.value = drawOddsMain.value.slice(0, 1);
+    if (drawOddsMain.value.length === 1) drawOddsDecimal.focus();
+  });
 
+  drawOddsDecimal.addEventListener("input", () => {
+    drawOddsDecimal.value = drawOddsDecimal.value.slice(0, 2);
+    if (drawOddsDecimal.value.length === 2) win1Odds.focus();
+  });
+
+  window.addEventListener("DOMContentLoaded", () => {
     calculate();
-  </script>
+    renderSavedResults();
+    limitDecimal(win1Odds);
+    limitDecimal(win2Odds);
+  });
 
+  [drawAmt, win1Amt, win2Amt].forEach(i => i.addEventListener("input", calculate));
+  [drawOddsMain, drawOddsDecimal, win1Odds, win2Odds].forEach(i => i.addEventListener("input", resetWinBets));
+</script>
 </body>
 </html>
